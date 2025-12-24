@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Box Breathing</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            color: #ffedd5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.light {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        #offline-notification {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #92400e;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            z-index: 1000;
+            display: none;
+        }
+        body.light #offline-notification {
+            background-color: #fbbf24;
+            color: black;
+        }
+
+        .container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        #box-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        #app-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #fcd34d;
+        }
+        body.light h1 {
+            color: #92400e;
+        }
+
+        .instruction {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #fdba74;
+            text-align: center;
+        }
+        body.light .instruction {
+            color: #92400e;
+        }
+
+        .countdown {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #ff6b6b;
+        }
+        body.light .countdown {
+            color: #dc2626;
+        }
+
+        .prompt {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #fde68a;
+            text-align: center;
+        }
+        body.light .prompt {
+            color: #92400e;
+        }
+
+        .complete {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #4ade80;
+            text-align: center;
+        }
+        body.light .complete {
+            color: #16a34a;
+        }
+
+        .timer, .progress {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            color: #fde68a;
+            z-index: 2;
+            text-align: right;
+        }
+        body.light .timer, body.light .progress {
+            color: #92400e;
+        }
+        .progress {
+            top: 3rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .settings {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        input, select {
+            background-color: #78350f;
+            color: #ffedd5;
+            border: 1px solid #d97706;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 16px;
+            width: 100%;
+        }
+        body.light input, body.light select {
+            background-color: #fef3c7;
+            color: #000000;
+            border-color: #92400e;
+        }
+
+        label {
+            color: #fde68a;
+            font-size: 0.9rem;
+        }
+        body.light label {
+            color: #92400e;
+        }
+
+        .switch-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button {
+            font-size: 1.25rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(to bottom, #d97706, #b45309);
+            color: black;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: linear-gradient(to bottom, #b45309, #92400e);
+        }
+        body.light button {
+            background: linear-gradient(to bottom, #fbbf24, #f59e0b);
+            color: black;
+        }
+        body.light button:hover {
+            background: linear-gradient(to bottom, #f59e0b, #d97706);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #374151;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #d97706;
+        }
+        body.light input:checked + .slider {
+            background-color: #92400e;
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .icon {
+            display: inline-block;
+            vertical-align: middle;
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .shortcut-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .preset-button {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #92400e;
+            color: #ffedd5;
+        }
+        .preset-button:hover {
+            background-color: #78350f;
+        }
+        body.light .preset-button {
+            background-color: #fbbf24;
+            color: black;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            max-width: 200px;
+            height: 10px;
+            background: #78350f;
+            border-radius: 5px;
+            outline: none;
+        }
+        body.light input[type="range"] {
+            background: #fef3c7;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #d97706;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        body.light input[type="range"]::-webkit-slider-thumb {
+            background: #92400e;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #d97706;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="offline-notification">You are offline, but the app will work normally</div>
+    
+    <div class="container">
+        <canvas id="box-canvas"></canvas>
+        <div id="app-content"></div>
+    </div>
+
+    <script src="app.js"></script>
+
+    <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
+        // Offline detection
+        window.addEventListener('online', () => {
+            document.getElementById('offline-notification').style.display = 'none';
+        });
+        window.addEventListener('offline', () => {
+            document.getElementById('offline-notification').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
